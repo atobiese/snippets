@@ -1,6 +1,13 @@
+// example script that controls 2 leds (as relays at D1 and D4), where the last is a "pusbutton" relay. Two servos at D5 and D6. 
+// the servos are used to control a camera module.
+// runs on an ESP8266
+
+#include <Homie.h>
+#include <Servo.h> 
+
 //-----------Debug script----------
 
-//#define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
  #define DEBUG_PRINT(x)         Serial.print (x)
@@ -12,13 +19,6 @@
  #define DEBUG_PRINTLN(x) 
 #endif
 //---------------------------------
-
-// example script that controls 2 leds (as relays at D1 and D4), where the last is a "pusbutton" relay. Two servos at D5 and D6. 
-// the servos are used to control a camera module.
-// runs on an ESP8266
-
-#include <Homie.h>
-#include <Servo.h> 
 
 #define OPENER_EVENT_MS 1000
 const int PIN_RELAY1 = D1;
@@ -37,20 +37,20 @@ Servo servo1; Servo servo2;
 // define a monitor timerRelay
 unsigned long timerRelay = 0;
 
-HomieNode lightNode1("light",  "switch");
-HomieNode lightNode2("light2", "relay");
-HomieNode servo1Node("servo1", "servoNode");
-HomieNode servo2Node("servo2", "servoNode");
+HomieNode relay1Node("relay1",  "switch");
+HomieNode relay2Node("relay2",  "switch");
+HomieNode servo1Node("servo1",  "servoNode");
+HomieNode servo2Node("servo2",  "servoNode");
 
 
-bool lightOnHandler(String value) {
+bool relay1OnHandler(String value) {
   if (value == "true") {
     digitalWrite(PIN_RELAY1, HIGH);
-    Homie.setNodeProperty(lightNode1, "on", value); // Update state
+    Homie.setNodeProperty(relay1Node, "on", value); // Update state
     DEBUG_PRINTLN("Relay1 is on");
   } else if (value == "false") {
     digitalWrite(PIN_RELAY1, LOW);
-    Homie.setNodeProperty(lightNode1, "on", value);
+    Homie.setNodeProperty(relay1Node, "on", value);
     DEBUG_PRINTLN("Relay1 is off");
   } else {
     return false;
@@ -58,16 +58,16 @@ bool lightOnHandler(String value) {
   return true;
 }
 
-bool lightOnHandler2(String value) {
+bool relay2OnHandler(String value) {
   if (value == "true") {
     digitalWrite(PIN_RELAY2, LOW);
-    Homie.setNodeProperty(lightNode2, "on", value); // Update state
+    Homie.setNodeProperty(relay2Node, "on", value); // Update state
     //monitor timer for this particular node
     timerRelay = millis();
     
   } else if (value == "false") {
     digitalWrite(PIN_RELAY2, HIGH);
-    Homie.setNodeProperty(lightNode2, "on", value);
+    Homie.setNodeProperty(relay2Node, "on", value);
     DEBUG_PRINTLN("Relay2 is off");
   } else {
     return false;
@@ -78,6 +78,7 @@ bool lightOnHandler2(String value) {
 bool servo1NodeHandler(String value) {
   int len = value.length();
   if (len <= 3) { 
+    Homie.setNodeProperty(servo1Node, "on", value); // Update state 
     runServo(value, servo1, PIN_SERVO1, minA1, maxA1);
   } else {
     return false;
@@ -107,12 +108,12 @@ void setup() {
   DEBUG_PRINTLN("Servos ready");
   
   Homie.setFirmware("rele med kamerakontroll", "1.0.0");
-  lightNode1.subscribe("on",  lightOnHandler);
-  lightNode2.subscribe("on",  lightOnHandler2);
+  relay1Node.subscribe("on",  relay1OnHandler);
+  relay2Node.subscribe("on",  relay2OnHandler);
   servo1Node.subscribe("on",  servo1NodeHandler);
   servo2Node.subscribe("on",  servo2NodeHandler);
-  Homie.registerNode(lightNode1);
-  Homie.registerNode(lightNode2);
+  Homie.registerNode(relay1Node);
+  Homie.registerNode(relay2Node);
   Homie.registerNode(servo1Node);
   Homie.registerNode(servo2Node);
 
@@ -123,7 +124,7 @@ void loop() {
   if (timerRelay && (millis() - timerRelay >= OPENER_EVENT_MS)) {
     digitalWrite(PIN_RELAY2, LOW);
     timerRelay = 0;
-    lightOnHandler2("false");
+    relay2OnHandler("false");
   }
   Homie.loop();
 }
