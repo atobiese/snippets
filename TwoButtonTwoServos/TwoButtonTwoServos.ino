@@ -23,8 +23,8 @@
 #define OPENER_EVENT_MS 1000
 const int PIN_RELAY1 = D1;
 const int PIN_RELAY2 = D4;
-const int PIN_SERVO1 = D5;
-const int PIN_SERVO2 = D6;
+const int PIN_SERVO1 = D7;
+const int PIN_SERVO2 = D8;
 
 String inString = "";     //string to hold input to servos
 static int val = 0;       //value to be sent to servo (0-100)
@@ -102,7 +102,11 @@ void setup() {
   pinMode(PIN_RELAY1, OUTPUT);
   digitalWrite(PIN_RELAY1, LOW);
   pinMode(PIN_RELAY2, OUTPUT);
-  digitalWrite(PIN_RELAY2, LOW);
+  digitalWrite(PIN_RELAY2, HIGH);
+   pinMode(PIN_SERVO1, OUTPUT);
+  digitalWrite(PIN_SERVO1, LOW);
+  pinMode(PIN_SERVO2, OUTPUT);
+  digitalWrite(PIN_SERVO2, HIGH);
   
   Serial.begin(115200);
   DEBUG_PRINTLN("Servos ready");

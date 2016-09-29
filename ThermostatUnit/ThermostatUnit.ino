@@ -3,7 +3,7 @@
 
 //external code controls the relay at given setpoints, based on temperature readings
 
-// v0.0.1 controls relay and logs temperature, lacks timer watchdog, to turn off relay if no respons from server
+// v0.0.1 controls relay and logs temperature, TODO: lacks timer watchdog, to turn off relay if no response from server
 
 #include <Homie.h>
 #include <DHT.h>
