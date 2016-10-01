@@ -3,7 +3,10 @@
 
 //external code controls the relay at given setpoints, based on temperature readings
 
-// v0.0.1 controls relay and logs temperature, TODO: lacks timer watchdog, to turn off relay if no response from server
+// v0.1 controls relay and logs temperature, 
+// v0.2 simple bypass dht node if only relay is used. 
+
+//TODO: lacks timer watchdog, to turn off relay if no response from server
 
 #include <Homie.h>
 #include <DHT.h>
@@ -25,11 +28,13 @@
 
 
 #define FW_NAME       "node-dht/relay"
-#define FW_VERSION    "0.0.1"
+#define FW_VERSION    "0.0.2"
 #define DHT_TYPE      DHT22
 
-const int PIN_RELAY1    = D8;
+const int PIN_RELAY1    = D1;
 const int DHT_PIN       = D7;
+
+int counter = 0;
 
 const int PUB_INTERVAL  = 60;  //seconds
 
@@ -58,11 +63,23 @@ void loopHandler() {
       if (!isnan(t) && Homie.setNodeProperty(temperatureNode, "degrees", String(t), true)) {
          DEBUG_PRINTLN("set new value to MQTT: "); DEBUG_PRINTDEC(t);  DEBUG_PRINT("\n");
         lastPublish = millis();
+        counter = 0;
       } 
       if (!isnan(h) && Homie.setNodeProperty(humidityNode, "relative", String(h), true)) {
          DEBUG_PRINTLN("set new value to MQTT: "); DEBUG_PRINTDEC(h);  DEBUG_PRINT("\n");
         lastPublish = millis();
-      }    
+        counter = 0;
+      }
+      counter = counter + 1; 
+      if (counter>10)  {
+          DEBUG_PRINTLN("-Sensor attempted 10 times. No measurement obtained "); 
+          DEBUG_PRINTLN("Publishing an error (-1)");
+          //Homie.setNodeProperty(temperatureNode, "degrees", "-1", false); 
+          //Homie.setNodeProperty(humidityNode, "relative", "-1", false); 
+          
+          // continue running as if there is no measurement or sensor connected
+          lastPublish = millis();
+        }   
     }
 }
 

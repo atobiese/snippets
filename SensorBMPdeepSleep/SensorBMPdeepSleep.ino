@@ -43,27 +43,28 @@ ADC_MODE(ADC_VCC);
 
 Adafruit_BMP085 bmp;
 
-#define       FW_NAME       "node-BMP"
-#define       FW_VERSION    "0.0.1"
-const int     PUB_INTERVAL    = 60;  //seconds
-unsigned long lastPublish = 0;
+#define       FW_NAME       "node-BMP-deepsleep"
+#define       FW_VERSION    "0.2"
+const int     PUB_INTERVAL    = 60;  //seconds (when not running deep sleep mode)
 
 //flags for deep sleep modus
 bool deepSleepModus = true; // or false: set to true if deep sleep option is to be used
                             //remember to connect RST to D0 for this to function
                             // set false to run in contineous mode with no deep sleep
                             
-const int SLEEP_INTERVAL = 60; //minutes, turn off for given minutes, start sensor, transmit data, go to sleep again
+const int SLEEP_INTERVAL = 10; //minutes, turn off for given minutes, start sensor, transmit data, go to sleep again
+//Homie reset pin
+const int RST_PIN    = D6; //add a pushbutton here or wire D6 to GND for 2 seconds
+
 
 bool sleepFlag = false; //always set to false
+unsigned long lastPublish = 0;
 
 int counter = 0;
 
 //count offline time before closing down in deepsleep
 unsigned long attemptLogonTime = 0;
 
-//Homie reset pin
-const int RST_PIN    = D6;
 HomieNode temperatureNode("temperature", "temperature");
 HomieNode humidityNode("humidity", "humidity");
 
@@ -163,7 +164,8 @@ void loop() {
     ESP.deepSleep(SLEEP_INTERVAL * 1000000UL * 60UL);
   }
 
-  if (millis() - attemptLogonTime >= 10 * 1000UL) {
+  //only in normal run shut down event
+  if (millis() - attemptLogonTime >= 10 * 1000UL && !(HOMIE_CONFIGURATION_MODE)) {
      DEBUG_PRINTLN("10 seconds has passed and no wifi conn, shutting down to save energy..");
      sleepFlag = true;
   }
@@ -176,15 +178,20 @@ void loop() {
 void onHomieEvent(HomieEvent event) {
   switch(event) {
     case HOMIE_MQTT_DISCONNECTED:
-      sleepFlag = true;
+        sleepFlag = true;
         DEBUG_PRINTLN("mqtt disconnected") ;
-      break;
+        break;
     case HOMIE_NORMAL_MODE:
       attemptLogonTime = millis();
       
       break;
     case HOMIE_WIFI_CONNECTED:
         DEBUG_PRINTLN("wifi connected");
+        attemptLogonTime = 0.0;
+      break;  
+    case HOMIE_CONFIGURATION_MODE:
+        DEBUG_PRINTLN("this is: HOMIE_CONFIGURATION_MODE");
+        DEBUG_PRINTLN(event);
         attemptLogonTime = 0.0;
       break;  
   }
