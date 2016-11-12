@@ -31,7 +31,7 @@
 #define FW_VERSION    "0.0.2"
 #define DHT_TYPE      DHT22
 
-const int PIN_RELAY1    = D1;
+const int PIN_RELAY1    = D1; // D1 wemos //D8 for brettet med nodemcu
 const int DHT_PIN       = D7;
 
 int counter = 0;
@@ -39,6 +39,10 @@ int counter = 0;
 const int PUB_INTERVAL  = 60;  //seconds
 
 unsigned long lastPublish = 0; //timer definition, set to zero
+
+//Homie reset pin
+const int RST_PIN    = D6; //add a pushbutton here or wire D6 to GND for 2 seconds
+
 
 HomieNode relayNode1("relay",  "switch");
 HomieNode temperatureNode("temperature", "temperature");
@@ -118,7 +122,9 @@ void setup() {
   Homie.setSetupFunction(setupHandler);
   Homie.setLoopFunction(loopHandler);
 
-  //Homie.enableBuiltInLedIndicator(false);  
+  //Homie.enableBuiltInLedIndicator(false); 
+  //a wemos is used. reset if D6 is pressed for 2 seconds 
+  Homie.setResetTrigger(RST_PIN, LOW, 2000);  
   
   
   Homie.setup();

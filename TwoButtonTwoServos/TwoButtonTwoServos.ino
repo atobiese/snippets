@@ -29,8 +29,10 @@ const int PIN_SERVO2 = D8;
 String inString = "";     //string to hold input to servos
 static int val = 0;       //value to be sent to servo (0-100)
 
-const int minA1 = 108;   const int maxA1 = 144;  //min and max angles allowed for servo (calibrated)  
-const int minA2 = 0;     const int maxA2 = 180;; //min and max angles allowed for servo
+//const int minA1 = 108;   const int maxA1 = 144;  //min and max angles allowed for servo (calibrated)  
+
+const int minA1 = 0;     const int maxA1 = 180;  //min and max angles allowed for servo (calibrated)  
+const int minA2 = 0;     const int maxA2 = 180; //min and max angles allowed for servo
 
 Servo servo1; Servo servo2; 
 
