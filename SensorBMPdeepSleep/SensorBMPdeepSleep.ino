@@ -39,13 +39,13 @@
 // D2 <-> SDA
 
 //voltage measurement
-ADC_MODE(ADC_VCC);
+//ADC_MODE(ADC_VCC); //this only measures inner circuit voltage
 
 Adafruit_BMP085 bmp;
 
 #define       FW_NAME       "node-BMP-deepsleep"
 #define       FW_VERSION    "0.2"
-const int     PUB_INTERVAL    = 60;  //seconds (when not running deep sleep mode)
+const int     PUB_INTERVAL    = 10;  //seconds (when not running deep sleep mode)
 
 //flags for deep sleep modus
 bool deepSleepModus = true; // or false: set to true if deep sleep option is to be used
@@ -80,14 +80,15 @@ void loopHandler() {
           DEBUG_PRINTLN("attempting to get properties") ;
           float t = bmp.readTemperature();
           float h = bmp.readPressure()/100; //mPa
-          float b = ESP.getVcc()/1000.0;
+          float b = battery_level(); //ESP.getVcc()/1000.0;
 
           if (!isnan(t) && Homie.setNodeProperty(temperatureNode, "degrees", String(t), true)) {
-             DEBUG_PRINTLN("set new value to MQTT: "); DEBUG_PRINTDEC(t);  
+             DEBUG_PRINT("set new value to MQTT: "); DEBUG_PRINTDEC(t);  DEBUG_PRINTLN("");
             lastPublish = millis();
           }
           if (!isnan(h) && Homie.setNodeProperty(humidityNode, "relative", String(h), true) && Homie.setNodeProperty(humidityNode, "battery", String(b), true)) {
-             DEBUG_PRINTLN("set new value to MQTT: "); DEBUG_PRINTDEC(h);  
+             DEBUG_PRINT("set new value to MQTT: "); DEBUG_PRINTDEC(h);  DEBUG_PRINTLN("");
+             DEBUG_PRINT("set new battterly level to MQTT: "); DEBUG_PRINTDEC(b); DEBUG_PRINTLN("");
             lastPublish = millis();
           }    
         }
@@ -95,16 +96,17 @@ void loopHandler() {
         //running in deep sleep modus
         float t = bmp.readTemperature();
         float h = bmp.readPressure()/100; //mPa
-        float b = ESP.getVcc()/1000.0;
+        float b = battery_level(); //ESP.getVcc()/1000.0;
         
         DEBUG_PRINTLN("attempting to get properties") ;
         if (!isnan(t) && Homie.setNodeProperty(temperatureNode, "degrees", String(t), true)) {
-           DEBUG_PRINTLN("set new value to MQTT: "); DEBUG_PRINTDEC(t);  
+           DEBUG_PRINT("set new value to MQTT: "); DEBUG_PRINTDEC(t);  DEBUG_PRINTLN("");
            //reset counter
            counter = 0;
         }
         if (!isnan(h) && Homie.setNodeProperty(humidityNode, "relative", String(h), true) && Homie.setNodeProperty(humidityNode, "battery", String(b), true)) {
-          DEBUG_PRINTLN("set new value to MQTT: "); DEBUG_PRINTDEC(h);
+          DEBUG_PRINT("set new value to MQTT: "); DEBUG_PRINTDEC(h);  DEBUG_PRINTLN("");
+          DEBUG_PRINT("set new battterly level to MQTT: "); DEBUG_PRINTDEC(b); DEBUG_PRINTLN("");
           //reset counter
           counter = 0;
         }
@@ -196,3 +198,30 @@ void onHomieEvent(HomieEvent event) {
       break;  
   }
 }
+
+float battery_level() {
+ 
+  // read the battery level from the ESP8266 analog in pin.
+  // analog read level is 10 bit 0-1023 (0V-1V).
+  // our 1M & 220K voltage divider takes the max
+  // lipo value of 4.2V and drops it to 0.758V max.
+  // this means our min analog read value should be 580 (3.14V)
+  // and the max analog read value should be 774 (4.2V).
+  float norm = 1023.0;
+  float correction = 1.0; //1.30;
+  float voltagemultiplier = 0.00496f;
+  float level = analogRead(A0)*voltagemultiplier; //(analogRead(A0))/norm/correction;
+  float level_corr = 1.0; //level*(1220.0/220.0);
+
+  //const float voltagemultiplier = 0.00496f; // Using a 200k resistor between the battery voltage and analog input A0 this experimentally results in the correct voltage being calculated in my setup, this might need to be changed for yours
+  
+  // convert battery level to percent
+  float lowerLim = 330.0;
+  float upperLim = 415.0;
+  float level_norm = map(level_corr*100, lowerLim, upperLim, 0, 100);
+  DEBUG_PRINT("Battery level: "); DEBUG_PRINTLN(level); 
+  DEBUG_PRINT("Battery voltage: "); DEBUG_PRINTLN(level_corr);
+  DEBUG_PRINT("Battery percent: "); DEBUG_PRINTLN(level_norm); 
+  return level_corr;
+}
+

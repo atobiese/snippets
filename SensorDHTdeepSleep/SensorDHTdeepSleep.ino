@@ -42,13 +42,13 @@
 #define FW_VERSION    "0.0.1"
 #define DHT_TYPE      DHT22
 
-const int DHT_PIN       = D4;
-const int PUB_INTERVAL  = 60;  //seconds
+const int DHT_PIN       = D2;
+const int PUB_INTERVAL  = 600;  //seconds
 
 unsigned long lastPublish = 0;
 
 //flags for deep sleep modus
-bool deepSleepModus = true; //set to true if deep sleep option is to be used
+bool deepSleepModus = false; //set to true if deep sleep option is to be used
                             //remember to connect RST to D0 for this to function
                             // set false to run in contineous mode with no deep sleep
                             
@@ -83,10 +83,22 @@ void loopHandler() {
           if (!isnan(t) && Homie.setNodeProperty(temperatureNode, "degrees", String(t), true)) {
              DEBUG_PRINTLN("set new value to MQTT: "); DEBUG_PRINTDEC(t);  
             lastPublish = millis();
+            counter = 0;
           }
           if (!isnan(h) && Homie.setNodeProperty(humidityNode, "relative", String(h), true)) {
              DEBUG_PRINTLN("set new value to MQTT: "); DEBUG_PRINTDEC(h);  
             lastPublish = millis();
+            counter = 0;
+          }
+          counter = counter + 1; 
+          if (counter>10)  {
+              DEBUG_PRINTLN("-Sensor attempted 10 times. No measurement obtained "); 
+              DEBUG_PRINTLN("Publishing an error (-1)");
+              //Homie.setNodeProperty(temperatureNode, "degrees", "-1", false); 
+              //Homie.setNodeProperty(humidityNode, "relative", "-1", false); 
+              
+              // continue running as if there is no measurement or sensor connected
+              lastPublish = millis();
           }    
         }
     }else{

@@ -31,8 +31,10 @@
 #define FW_VERSION    "0.0.2"
 #define DHT_TYPE      DHT22
 
-const int PIN_RELAY1    = D1; // D1 wemos //D8 for brettet med nodemcu
-const int DHT_PIN       = D7;
+const int PIN_RELAY1    = 12; // 12 sonoff //D1; // D1 wemos //D8 for brettet med nodemcu
+const int DHT_PIN       = 15;
+
+const int PIN_LED = 13; //for sonoff
 
 int counter = 0;
 
@@ -41,7 +43,7 @@ const int PUB_INTERVAL  = 60;  //seconds
 unsigned long lastPublish = 0; //timer definition, set to zero
 
 //Homie reset pin
-const int RST_PIN    = D6; //add a pushbutton here or wire D6 to GND for 2 seconds
+const int RST_PIN    = 98; //add a pushbutton here or wire D6 to GND for 2 seconds
 
 
 HomieNode relayNode1("relay",  "switch");
@@ -90,8 +92,11 @@ void loopHandler() {
 bool relayOnHandler(String value) {
   if (value == "true") {
     digitalWrite(PIN_RELAY1, HIGH);
+    //sonoff led
+    digitalWrite(PIN_LED, HIGH);
     Homie.setNodeProperty(relayNode1, "on", value); // Update state
     DEBUG_PRINTLN("Relay1 is on");
+    
   } else if (value == "false") {
     digitalWrite(PIN_RELAY1, LOW);
     Homie.setNodeProperty(relayNode1, "on", value);
@@ -106,6 +111,8 @@ void setup() {
   // reset relays to off
   pinMode(PIN_RELAY1, OUTPUT);
   digitalWrite(PIN_RELAY1, LOW);
+  //sonoff led
+  digitalWrite(PIN_LED, LOW);
   
    #ifdef DEBUG 
     Serial.begin(115200);
@@ -124,7 +131,7 @@ void setup() {
 
   //Homie.enableBuiltInLedIndicator(false); 
   //a wemos is used. reset if D6 is pressed for 2 seconds 
-  Homie.setResetTrigger(RST_PIN, LOW, 2000);  
+  //Homie.setResetTrigger(RST_PIN, LOW, 2000);  
   
   
   Homie.setup();
