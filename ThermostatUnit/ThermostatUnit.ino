@@ -4,7 +4,7 @@
 //external code controls the relay at given setpoints, based on temperature readings
 
 // v0.1 controls relay and logs temperature, 
-// v0.2 simple bypass dht node if only relay is used. 
+// v0.2 simple bypass dht node if only used. 
 
 //TODO: lacks timer watchdog, to turn off relay if no response from server
 
@@ -31,10 +31,10 @@
 #define FW_VERSION    "0.0.2"
 #define DHT_TYPE      DHT22
 
-const int PIN_RELAY1    = 12; // 12 sonoff //D1; // D1 wemos //D8 for brettet med nodemcu
-const int DHT_PIN       = 15;
+const int PIN_RELAY1    = D1; // 12 sonoff //D1; // D1 wemos //D8 for brettet med nodemcu
+const int DHT_PIN       = 15; //15 sonoff
 
-const int PIN_LED = 13; //for sonoff
+const int PIN_LED = D4; // 13 for sonoff //D7 for wemos //D4 for built in led wemos
 
 int counter = 0;
 
@@ -43,7 +43,7 @@ const int PUB_INTERVAL  = 60;  //seconds
 unsigned long lastPublish = 0; //timer definition, set to zero
 
 //Homie reset pin
-const int RST_PIN    = 98; //add a pushbutton here or wire D6 to GND for 2 seconds
+const int RST_PIN    = D6; // take out and add 98 for sonoff; //add a pushbutton here or wire D6 to GND for 2 seconds
 
 
 HomieNode relayNode1("relay",  "switch");
