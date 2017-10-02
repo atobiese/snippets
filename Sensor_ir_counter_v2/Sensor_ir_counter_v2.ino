@@ -28,7 +28,7 @@ const int PIN_INTERRUPT   = D7;
 const int DEBOUNCE_MILLISEC = 150; 
 
 int nr_blinks=0, total_historic_counts=0, nr_interrupt=0;
-float timedelta, kW_leilighet, amps_leilighet;
+float timedelta, kW_leilighet, amps_leilighet, kWt_leilighet;
 String string_pub;
 
 //timers
@@ -75,6 +75,7 @@ void setup() {
   blinkNode.advertise("nr_blinks");
   blinkNode.advertise("nr_tens");
   blinkNode.advertise("nr_kW");
+  blinkNode.advertise("nr_kWt");
   blinkNode.advertise("nr_amps");
   blinkNode.advertise("nr_time_10_imp");
   
@@ -113,10 +114,13 @@ void publish_data(unsigned long & current_millis, unsigned long & previous_milli
     if (!isnan(kW_leilighet) && blinkNode.setProperty("nr_kW").send(String(kW_leilighet))) {
         DEBUG_PRINT("MQTT: kW_leilighet "); DEBUG_PRINTDEC(kW_leilighet);  DEBUG_PRINTLN("");
     }
+    if (!isnan(kWt_leilighet) && blinkNode.setProperty("nr_kWt").send(String(kWt_leilighet))) {
+        DEBUG_PRINT("MQTT: kWt_totalt"); DEBUG_PRINTDEC(kWt_leilighet);  DEBUG_PRINTLN("");
+    }
     if (!isnan(amps_leilighet) && blinkNode.setProperty("nr_amps").send(String(amps_leilighet))) {
         DEBUG_PRINT("MQTT: amps_leilighet "); DEBUG_PRINTDEC(amps_leilighet);  DEBUG_PRINTLN("");;
     }
-    if (!isnan(timedelta) && blinkNode.setProperty("nr_time_10_imp").send(String(timedelta))) {
+    if (!isnan(timedelta) && blinkNode.setProperty("nr_time_imp").send(String(timedelta))) {
         DEBUG_PRINT("MQTT: timedelta "); DEBUG_PRINTDEC(timedelta);  DEBUG_PRINTLN("");
     } 
     
