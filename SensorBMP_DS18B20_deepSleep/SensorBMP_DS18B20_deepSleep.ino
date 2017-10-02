@@ -18,7 +18,10 @@
 //---------------------------------
 
 #include <Homie.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 #include <Adafruit_BMP085.h>
+
 // I2C:
 // D1 <-> SCL (wemos D1)
 // D2 <-> SDA
@@ -26,7 +29,6 @@
 //voltage measurement
 //ADC_MODE(ADC_VCC); //this only measures inner circuit voltage
 
-Adafruit_BMP085 bmp;
 
 #define       FW_NAME       "node-BMP-deepsleep"
 #define       FW_VERSION    "0.3"
@@ -41,6 +43,16 @@ const int SLEEP_INTERVAL = 1; //minutes, turn off for given minutes, start senso
 //Homie reset pin
 const int RST_PIN    = D6; //add a pushbutton here or wire D6 to GND for 2 seconds
 
+#define ONE_WIRE_BUS D3  // DS18B20 pin
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+DeviceAddress sensorDeviceAddress;
+
+// How many bits to use for temperature values: 9, 10, 11 or 12
+#define SENSOR_RESOLUTION 12
+// Index of sensors connected to data pin, default: 0
+#define SENSOR_INDEX 0
+
 
 bool sleepFlag = false; //always set to false
 unsigned long lastPublish = 0;
@@ -49,6 +61,8 @@ int counter = 0;
 
 //count offline time before closing down in deepsleep
 unsigned long attemptLogonTime = 0;
+
+Adafruit_BMP085 bmp;
 
 HomieNode temperatureNode("temperature", "temperature");
 HomieNode humidityNode("humidity", "humidity");
@@ -62,11 +76,15 @@ void loopHandler() {
 
   if (!deepSleepModus) {
         if (millis() - lastPublish >= PUB_INTERVAL * 1000UL) {
+          
           DEBUG_PRINTLN("attempting to get properties") ;
-          float t = bmp.readTemperature();
-          float h = bmp.readPressure()/100; //mPa
+          sensors.requestTemperatures(); 
+          
+          float t = sensors.getTempCByIndex(0);
+          float h = -1.0; //bmp.readPressure()/100; //mPa
           float b = battery_level(); //ESP.getVcc()/1000.0;
 
+         
           if (!isnan(t) && temperatureNode.setProperty("degrees").send(String(t))) {
              DEBUG_PRINT("set new value to MQTT: "); DEBUG_PRINTDEC(t);  DEBUG_PRINTLN("");
             lastPublish = millis();
@@ -79,8 +97,10 @@ void loopHandler() {
         }
     }else{
         //running in deep sleep modus
-        float t = bmp.readTemperature();
-        float h = bmp.readPressure()/100; //mPa
+        
+        sensors.requestTemperatures(); 
+        float t = sensors.getTempCByIndex(0);
+        float h = 0.0; //bmp.readPressure()/100; //mPa
         float b = battery_level(); //ESP.getVcc()/1000.0;
         
         DEBUG_PRINTLN("attempting to get properties") ;
@@ -125,7 +145,10 @@ void setup() {
   #endif
 
   bmp.begin();
-  
+  sensors.begin();
+  sensors.getAddress(sensorDeviceAddress, 0);
+  sensors.setResolution(sensorDeviceAddress, SENSOR_RESOLUTION);
+    
   Homie_setFirmware(FW_NAME, FW_VERSION);
 
   //Homie.registerNode(temperatureNode);
@@ -135,7 +158,7 @@ void setup() {
   Homie.setLoopFunction(loopHandler);
   
   //no leds blinking
-  //Homie.disableLedFeedback();  
+  Homie.disableLedFeedback();  
   
   //enable event to grigger when MQTT disconnects
   if (deepSleepModus) {
