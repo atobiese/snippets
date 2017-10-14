@@ -26,7 +26,7 @@
 const int PUB_INTERVAL    = 60;  //seconds (each publish to mqtt)
 const int PIN_INTERRUPT   = D7; 
 const int DEBOUNCE_MILLISEC = 150; 
-
+float IMPS_PER_KWT = 1000.0;
 int nr_blinks=0, total_historic_counts=0, nr_interrupt=0;
 float timedelta, kW_leilighet, amps_leilighet, kWt_leilighet;
 String string_pub;
@@ -77,7 +77,7 @@ void setup() {
   blinkNode.advertise("nr_kW");
   blinkNode.advertise("nr_kWt");
   blinkNode.advertise("nr_amps");
-  blinkNode.advertise("nr_time_10_imp");
+  blinkNode.advertise("nr_time_imp");
   
   Homie.setup();
 }
@@ -92,9 +92,9 @@ void publish_data(unsigned long & current_millis, unsigned long & previous_milli
     total_historic_counts = total_historic_counts + nr_blinks;
     timedelta = (current_millis-previous_millis)/ 1000.0; //converting to float (is this expensive cpu'wise?)
     //1000 blinks pr kWh, so for nr_blinks 
-    kW_leilighet = (nr_blinks/1000.0) * 3600.0 / (timedelta); //kW
+    kW_leilighet = (nr_blinks/IMPS_PER_KWT) * 3600.0 / (timedelta); //kW
     amps_leilighet = (kW_leilighet*1000.0) / 230; //W = A*V (ampere)
-    
+    kWt_leilighet = total_historic_counts / IMPS_PER_KWT
     DEBUG_PRINT("nr_blinks: ");
     DEBUG_PRINTLN(nr_blinks);
     DEBUG_PRINT("sending a packet at time: ");
